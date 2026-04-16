@@ -1,0 +1,42 @@
+﻿@model List<libraryApp.Models.Book>
+
+<div class="container">
+    <h2>Kitap Listesi</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <a href="/Books/Add" class="btn btn-primary mb-3">Yeni Kitap Ekle</a>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Kitap Adı</th>
+                <th>Yazar</th>
+                <th>Fiyat</th>
+                <th>Stok</th>
+                <th>İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Title</td>
+                    <td>@item.Author</td>
+                    <td>@item.Price.ToString("C2")</td>
+                    <td>@item.Stock</td>
+                    <td>
+                        <a href="/Books/Update/@item.Id" class="btn btn-warning btn-sm">Güncelle</a>
+                        <a href="/Books/Remove/@item.Id" class="btn btn-danger btn-sm" onclick="return confirm('Silmek istediğinize emin misiniz?')">Sil</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>S

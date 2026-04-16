@@ -1,0 +1,41 @@
+﻿@model libraryApp.Models.Book
+
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-warning">
+            <h4>Kitabı Güncelle</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="Update" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" /> <div class="mb-3">
+                    <label asp-for="Title" class="form-label">Kitap Adı</label>
+                    <input asp-for="Title" class="form-control" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Author" class="form-label">Yazar</label>
+                    <input asp-for="Author" class="form-control" />
+                    <span asp-validation-for="Author" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Price" class="form-label">Fiyat</label>
+                        <input asp-for="Price" class="form-control" type="number" step="0.01" />
+                        <span asp-validation-for="Price" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Stock" class="form-label">Stok Adedi</label>
+                        <input asp-for="Stock" class="form-control" type="number" />
+                        <span asp-validation-for="Stock" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Güncelle</button>
+                <a asp-action="Index" class="btn btn-secondary">İptal</a>
+            </form>
+        </div>
+    </div>
+</div>
