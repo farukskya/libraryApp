@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using libraryApp.Data;
 using libraryApp.Models;
-using System.Linq;
 
 namespace libraryApp.Controllers
 {
@@ -14,69 +14,60 @@ namespace libraryApp.Controllers
             _context = context;
         }
 
-        // 1) Kitapları Listeleme
+        // KİTAP LİSTESİ
         public IActionResult Index()
         {
-            var books = _context.Books.ToList();
+            // Kategorileriyle birlikte kitapları çekiyoruz
+            var books = _context.Books.Include(b => b.Category).ToList();
             return View(books);
         }
 
-        // 2) Kitap Ekleme Sayfası [GET]
+        // KİTAP EKLEME SAYFASI (AÇILIŞ)
+        [HttpGet]
         public IActionResult Add()
         {
+            ViewBag.Categories = _context.Categories.ToList();
             return View();
         }
 
-        // 3) Kitap Ekleme İşlemi [POST]
+        // KİTAP EKLEME (KAYDETME) - Engeller kaldırıldı!
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Add(Book newBook)
+        public IActionResult Add(Book book)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Books.Add(newBook);
-                _context.SaveChanges();
-                TempData["SuccessMessage"] = "Kitap başarıyla eklendi!";
-                return RedirectToAction("Index");
-            }
-            return View(newBook);
+            // ModelState kontrolünü kaldırdık, doğrudan kaydediyoruz
+            _context.Books.Add(book);
+            _context.SaveChanges();
+            return RedirectToAction("Index");
         }
 
-        // 4) Güncelleme Sayfası [GET]
+        // KİTAP GÜNCELLEME SAYFASI (AÇILIŞ)
+        [HttpGet]
         public IActionResult Update(int id)
         {
             var book = _context.Books.Find(id);
-            if (book == null)
-            {
-                return NotFound();
-            }
+            if (book == null) return NotFound();
+
+            ViewBag.Categories = _context.Categories.ToList();
             return View(book);
         }
 
-        // 5) Güncelleme İşlemi [POST]
+        // KİTAP GÜNCELLEME (KAYDETME)
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Update(Book updatedBook)
+        public IActionResult Update(Book book)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Books.Update(updatedBook);
-                _context.SaveChanges();
-                TempData["SuccessMessage"] = "Kitap başarıyla güncellendi!";
-                return RedirectToAction("Index");
-            }
-            return View(updatedBook);
+            _context.Books.Update(book);
+            _context.SaveChanges();
+            return RedirectToAction("Index");
         }
 
-        // 6) Kitap Silme İşlemi
-        public IActionResult Remove(int id)
+        // KİTAP SİLME
+        public IActionResult Delete(int id)
         {
             var book = _context.Books.Find(id);
             if (book != null)
             {
                 _context.Books.Remove(book);
                 _context.SaveChanges();
-                TempData["SuccessMessage"] = "Kitap başarıyla silindi!";
             }
             return RedirectToAction("Index");
         }

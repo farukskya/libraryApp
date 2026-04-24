@@ -20,6 +20,7 @@
                 <th>Yazar</th>
                 <th>Fiyat</th>
                 <th>Stok</th>
+                <th>Kategori</th>
                 <th>İşlemler</th>
             </tr>
         </thead>
@@ -31,6 +32,7 @@
                     <td>@item.Author</td>
                     <td>@item.Price.ToString("C2")</td>
                     <td>@item.Stock</td>
+                    <td>@item.Category?.Name</td>
                     <td>
                         <a href="/Books/Update/@item.Id" class="btn btn-warning btn-sm">Güncelle</a>
                         <a href="/Books/Remove/@item.Id" class="btn btn-danger btn-sm" onclick="return confirm('Silmek istediğinize emin misiniz?')">Sil</a>
