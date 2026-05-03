@@ -12,6 +12,51 @@
     }
 
     <a href="/Books/Add" class="btn btn-primary mb-3">Yeni Kitap Ekle</a>
+    <div class="card bg-light mb-4">
+        <div class="card-body">
+            <form asp-action="Index" method="get" class="row g-3">
+                <!-- Arama Kutusu -->
+                <div class="col-md-3">
+                    <input type="text" name="searchString" class="form-control" placeholder="Kitap adı ara..." value="@ViewBag.CurrentSearch" />
+                </div>
+
+                <!-- Kategori Filtresi -->
+                <div class="col-md-3">
+                    <select name="categoryId" class="form-select">
+                        <option value="">Tüm Kategoriler</option>
+                        @foreach (var cat in ViewBag.Categories)
+                        {
+                            <!-- Eğer kategori seçiliyse işaretli kalsın -->
+                            <option value="@cat.Id" selected="@(ViewBag.CurrentCategory == cat.Id)">@cat.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Sıralama Seçeneği -->
+                <div class="col-md-3">
+                    <select name="sortOrder" class="form-select">
+                        <option value="name_asc" selected='@(ViewBag.CurrentSort == "name_asc")'>Ad (A-Z)</option>
+                        <option value="name_desc" selected='@(ViewBag.CurrentSort == "name_desc")'>Ad (Z-A)</option>
+                        <option value="price_asc" selected='@(ViewBag.CurrentSort == "price_asc")'>Fiyat (Artan)</option>
+                        <option value="price_desc" selected='@(ViewBag.CurrentSort == "price_desc")'>Fiyat (Azalan)</option>
+                        <option value="stock_asc" selected='@(ViewBag.CurrentSort == "stock_asc")'>Stok (Artan)</option>
+                        <option value="stock_desc" selected='@(ViewBag.CurrentSort == "stock_desc")'>Stok (Azalan)</option>
+                    </select>
+                </div>
+
+                <!-- Butonlar -->
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">Uygula</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sonuç Bulunamadı Mesajı[cite: 1] -->
+    @if (!Model.Any())
+    {
+        <div class="alert alert-warning">Aradığınız kriterlere uygun kitap bulunamadı.</div>
+    }
 
     <table class="table table-striped">
         <thead>

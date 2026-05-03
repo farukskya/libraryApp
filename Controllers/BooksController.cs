@@ -15,11 +15,43 @@ namespace libraryApp.Controllers
         }
 
         // KİTAP LİSTESİ
-        public IActionResult Index()
+        public IActionResult Index(string searchString, int? categoryId, string sortOrder)
         {
-            // Kategorileriyle birlikte kitapları çekiyoruz
-            var books = _context.Books.Include(b => b.Category).ToList();
-            return View(books);
+            // 1. Kategorileri dropdown (filtre) için gönderiyoruz
+            ViewBag.Categories = _context.Categories.ToList();
+
+            // 2. Mevcut seçimleri sayfada tutmak için ViewBag'e atıyoruz
+            ViewBag.CurrentSearch = searchString;
+            ViewBag.CurrentCategory = categoryId;
+            ViewBag.CurrentSort = sortOrder;
+
+            // 3. Sorguyu hazırlıyoruz (Henüz veritabanına gitmedi - AsQueryable)
+            var books = _context.Books.Include(b => b.Category).AsQueryable();
+
+            // 4. ARAMA: Kitap adında geçiyor mu?
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                books = books.Where(b => b.Title.Contains(searchString));
+            }
+
+            // 5. FİLTRELEME: Belirli bir kategori seçildi mi?
+            if (categoryId.HasValue)
+            {
+                books = books.Where(b => b.CategoryId == categoryId);
+            }
+
+            // 6. SIRALAMA: Kullanıcı neye göre sıralamak istedi?[cite: 1]
+            books = sortOrder switch
+            {
+                "name_desc" => books.OrderByDescending(b => b.Title),
+                "price_asc" => books.OrderBy(b => b.Price),
+                "price_desc" => books.OrderByDescending(b => b.Price),
+                "stock_asc" => books.OrderBy(b => b.Stock),
+                "stock_desc" => books.OrderByDescending(b => b.Stock),
+                _ => books.OrderBy(b => b.Title), // Varsayılan: A-Z[cite: 1]
+            };
+
+            return View(books.ToList()); // Ve nihayet veritabanından çekip sayfaya yolluyoruz!
         }
 
         // KİTAP EKLEME SAYFASI (AÇILIŞ)
