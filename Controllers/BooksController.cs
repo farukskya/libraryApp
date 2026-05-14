@@ -103,5 +103,15 @@ namespace libraryApp.Controllers
             }
             return RedirectToAction("Index");
         }
+        public IActionResult Details(int id) // Parantez içindeki 'int id' mutlaka olmalı!
+        {
+            var book = _context.Books
+                .Include(b => b.Category)
+                .FirstOrDefault(b => b.Id == id);
+
+            if (book == null) return NotFound();
+
+            return View(book);
+        }
     }
-}
+    }
