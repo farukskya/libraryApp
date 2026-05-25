@@ -1,90 +1,102 @@
-﻿@model List<libraryApp.Models.Book>
+﻿@model IEnumerable<libraryApp.Models.Book>
 
-<div class="container">
-    <h2>Kitap Listesi</h2>
+@{
+    ViewData["Title"] = "Kitap Listesi";
+}
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary m-0">📚 Kütüphane Kitap Listesi</h2>
 
-    <a href="/Books/Add" class="btn btn-primary mb-3">Yeni Kitap Ekle</a>
-    <div class="card bg-light mb-4">
-        <div class="card-body">
-            <form asp-action="Index" method="get" class="row g-3">
-                <!-- Arama Kutusu -->
-                <div class="col-md-3">
-                    <input type="text" name="searchString" class="form-control" placeholder="Kitap adı ara..." value="@ViewBag.CurrentSearch" />
-                </div>
-
-                <!-- Kategori Filtresi -->
-                <div class="col-md-3">
-                    <select name="categoryId" class="form-select">
-                        <option value="">Tüm Kategoriler</option>
-                        @foreach (var cat in ViewBag.Categories)
-                        {
-                            <!-- Eğer kategori seçiliyse işaretli kalsın -->
-                            <option value="@cat.Id" selected="@(ViewBag.CurrentCategory == cat.Id)">@cat.Name</option>
-                        }
-                    </select>
-                </div>
-
-                <!-- Sıralama Seçeneği -->
-                <div class="col-md-3">
-                    <select name="sortOrder" class="form-select">
-                        <option value="name_asc" selected='@(ViewBag.CurrentSort == "name_asc")'>Ad (A-Z)</option>
-                        <option value="name_desc" selected='@(ViewBag.CurrentSort == "name_desc")'>Ad (Z-A)</option>
-                        <option value="price_asc" selected='@(ViewBag.CurrentSort == "price_asc")'>Fiyat (Artan)</option>
-                        <option value="price_desc" selected='@(ViewBag.CurrentSort == "price_desc")'>Fiyat (Azalan)</option>
-                        <option value="stock_asc" selected='@(ViewBag.CurrentSort == "stock_asc")'>Stok (Artan)</option>
-                        <option value="stock_desc" selected='@(ViewBag.CurrentSort == "stock_desc")'>Stok (Azalan)</option>
-                    </select>
-                </div>
-
-                <!-- Butonlar -->
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary w-100">Uygula</button>
-                </div>
-            </form>
-        </div>
+        @* Yeni Kitap Ekle butonu her zaman görünür *@
+        @* Giriş yapmayan veya Admin olmayan biri basarsa doğrudan Giriş Ekranına uçar *@
+        @if (User.Identity.IsAuthenticated && User.IsInRole("Admin"))
+        {
+            <a asp-action="Add" class="btn btn-primary px-4 fw-bold shadow-sm">+ Yeni Kitap Ekle</a>
+        }
+        else
+        {
+            @* Eğer Admin değilse veya Giriş yapmadıysa tıklandığı an Login sayfasına yönlendirilir *@
+            <a asp-controller="Account" asp-action="Login" class="btn btn-primary px-4 fw-bold shadow-sm">+ Yeni Kitap Ekle</a>
+        }
     </div>
 
-    <!-- Sonuç Bulunamadı Mesajı[cite: 1] -->
-    @if (!Model.Any())
-    {
-        <div class="alert alert-warning">Aradığınız kriterlere uygun kitap bulunamadı.</div>
-    }
+    <div class="card border-0 shadow-sm bg-light p-3 mb-4">
+        <form asp-action="Index" method="get" class="row g-3 align-items-center">
+            <div class="col-md-5">
+                <input type="text" name="searchString" value="@ViewData["CurrentSearch"]" class="form-control" placeholder="Kitap adı veya yazar ara..." />
+            </div>
+            <div class="col-md-4">
+                <select name="categoryId" class="form-select" asp-items="@(new SelectList(ViewBag.Categories, "Id", "Name", ViewData["CurrentCategory"]))">
+                    <option value="">-- Tüm Kategoriler --</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-success w-100 fw-semibold">Filtrele</button>
+                <a asp-action="Index" class="btn btn-secondary w-100 fw-semibold">Temizle</a>
+            </div>
+        </form>
+    </div>
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Kitap Adı</th>
-                <th>Yazar</th>
-                <th>Fiyat</th>
-                <th>Stok</th>
-                <th>Kategori</th>
-                <th>İşlemler</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
+    <div class="table-responsive shadow-sm rounded-3">
+        <table class="table table-hover table-striped align-middle bg-white m-0">
+            <thead class="table-dark">
                 <tr>
-                    <td>@item.Title</td>
-                    <td>@item.Author</td>
-                    <td>@item.Price.ToString("C2")</td>
-                    <td>@item.Stock</td>
-                    <td>@item.Category?.Name</td>
-                    <td>
-                        <a href="/Books/Update/@item.Id" class="btn btn-warning btn-sm">Güncelle</a>
-                        <a href="/Books/Remove/@item.Id" class="btn btn-danger btn-sm" onclick="return confirm('Silmek istediğinize emin misiniz?')">Sil</a>
-                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Detay</a>
-                    </td>
+                    <th><a class="text-white text-decoration-none" asp-action="Index" asp-route-sortOrder="@ViewData["NameSortParam"]" asp-route-searchString="@ViewData["CurrentSearch"]" asp-route-categoryId="@ViewData["CurrentCategory"]">Kitap Adı ⇅</a></th>
+                    <th>Yazar</th>
+                    <th><a class="text-white text-decoration-none" asp-action="Index" asp-route-sortOrder="@ViewData["PriceSortParam"]" asp-route-searchString="@ViewData["CurrentSearch"]" asp-route-categoryId="@ViewData["CurrentCategory"]">Fiyat ⇅</a></th>
+                    <th><a class="text-white text-decoration-none" asp-action="Index" asp-route-sortOrder="@ViewData["StockSortParam"]" asp-route-searchString="@ViewData["CurrentSearch"]" asp-route-categoryId="@ViewData["CurrentCategory"]">Stok ⇅</a></th>
+                    <th>Kategori</th>
+                    <th class="text-center" style="width: 250px;">İşlemler</th>
                 </tr>
-            }
-        </tbody>
-    </table>
-</div>S
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold text-dark">@item.Title</td>
+                        <td>@item.Author</td>
+                        <td class="text-success fw-bold">@item.Price.ToString("C2")</td>
+                        <td>
+                            <span class="badge @(item.Stock > 5 ? "bg-info text-dark" : "bg-danger") px-2.5 py-1.5">
+                                @item.Stock Adet
+                            </span>
+                        </td>
+                        <td><span class="badge bg-secondary px-2 py-1">@item.Category?.Name</span></td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+
+                                @* DETAY: Herkes basabilir, giriş yapmayan basarsa Login'e gider *@
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info text-white px-2.5">Detay</a>
+
+                                @* TAM YETKİLİ ADMIN SENARYOSU *@
+                                @if (User.Identity.IsAuthenticated && User.IsInRole("Admin"))
+                                {
+                                    <a asp-action="Update" asp-route-id="@item.Id" class="btn btn-sm btn-warning text-dark px-2.5">Güncelle</a>
+
+                                    @* Admin basarsa onay alır ve arka plandaki POST formunu ateşler *@
+                                    <a href="javascript:void(0);"
+                                       onclick="if(confirm('Bu kitabı silmek istediğinize emin misiniz?')) { document.getElementById('delete-form-@item.Id').submit(); }"
+                                       class="btn btn-sm btn-danger px-2.5">Sil</a>
+
+                                    <form id="delete-form-@item.Id" asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:none;">
+                                        @Html.AntiForgeryToken()
+                                    </form>
+                                }
+                                else
+                                {
+                                    @* KAPTANIN İSTEDİĞİ DEĞİŞİKLİK BURASI: *@
+                                    @* Hem giriş yapmamış anonim kullanıcı hem de normal USER rolündeki kullanıcı *@
+                                    @* Güncelle veya Sil butonuna bastığı an doğrudan Account/Login (Giriş) sayfasına fırlatılır! *@
+                                    <a asp-controller="Account" asp-action="Login" class="btn btn-sm btn-warning text-dark px-2.5">Güncelle</a>
+                                    <a asp-controller="Account" asp-action="Login" class="btn btn-sm btn-danger px-2.5">Sil</a>
+                                }
+
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

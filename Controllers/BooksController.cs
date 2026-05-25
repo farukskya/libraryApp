@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using libraryApp.Data;
 using libraryApp.Models;
+using Microsoft.AspNetCore.Authorization;
+using System.Linq;
 
 namespace libraryApp.Controllers
 {
@@ -14,104 +16,131 @@ namespace libraryApp.Controllers
             _context = context;
         }
 
-        // KİTAP LİSTESİ
+        // ==================== 1. LİSTELEME (INDEX) ====================
+        [AllowAnonymous] // Herkese açık (Anonim kullanıcı görebilir)
         public IActionResult Index(string searchString, int? categoryId, string sortOrder)
         {
-            // 1. Kategorileri dropdown (filtre) için gönderiyoruz
-            ViewBag.Categories = _context.Categories.ToList();
+            ViewData["CurrentSearch"] = searchString;
+            ViewData["CurrentCategory"] = categoryId;
+            ViewData["NameSortParam"] = string.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
+            ViewData["PriceSortParam"] = sortOrder == "Price" ? "price_desc" : "Price";
+            ViewData["StockSortParam"] = sortOrder == "Stock" ? "stock_desc" : "Stock";
 
-            // 2. Mevcut seçimleri sayfada tutmak için ViewBag'e atıyoruz
-            ViewBag.CurrentSearch = searchString;
-            ViewBag.CurrentCategory = categoryId;
-            ViewBag.CurrentSort = sortOrder;
-
-            // 3. Sorguyu hazırlıyoruz (Henüz veritabanına gitmedi - AsQueryable)
             var books = _context.Books.Include(b => b.Category).AsQueryable();
 
-            // 4. ARAMA: Kitap adında geçiyor mu?
             if (!string.IsNullOrEmpty(searchString))
             {
-                books = books.Where(b => b.Title.Contains(searchString));
+                books = books.Where(b => b.Title.Contains(searchString) || b.Author.Contains(searchString));
             }
 
-            // 5. FİLTRELEME: Belirli bir kategori seçildi mi?
             if (categoryId.HasValue)
             {
                 books = books.Where(b => b.CategoryId == categoryId);
             }
 
-            // 6. SIRALAMA: Kullanıcı neye göre sıralamak istedi?[cite: 1]
-            books = sortOrder switch
+            switch (sortOrder)
             {
-                "name_desc" => books.OrderByDescending(b => b.Title),
-                "price_asc" => books.OrderBy(b => b.Price),
-                "price_desc" => books.OrderByDescending(b => b.Price),
-                "stock_asc" => books.OrderBy(b => b.Stock),
-                "stock_desc" => books.OrderByDescending(b => b.Stock),
-                _ => books.OrderBy(b => b.Title), // Varsayılan: A-Z[cite: 1]
-            };
+                case "name_desc": books = books.OrderByDescending(b => b.Title); break;
+                case "Price": books = books.OrderBy(b => b.Price); break;
+                case "price_desc": books = books.OrderByDescending(b => b.Price); break;
+                case "Stock": books = books.OrderBy(b => b.Stock); break;
+                case "stock_desc": books = books.OrderByDescending(b => b.Stock); break;
+                default: books = books.OrderBy(b => b.Title); break;
+            }
 
-            return View(books.ToList()); // Ve nihayet veritabanından çekip sayfaya yolluyoruz!
+            ViewBag.Categories = _context.Categories.ToList();
+            return View(books.ToList());
         }
 
-        // KİTAP EKLEME SAYFASI (AÇILIŞ)
-        [HttpGet]
+        // ==================== 2. DETAY SAYFASI (DETAILS) ====================
+        [Authorize(Roles = "Admin,User")] // Anonim basarsa LOGIN'e uçar, User/Admin görebilir
+        public IActionResult Details(int id)
+        {
+            var book = _context.Books
+                .Include(b => b.Category)
+                .FirstOrDefault(b => b.Id == id);
+
+            if (book == null)
+            {
+                return NotFound();
+            }
+
+            return View(book);
+        }
+
+        // ==================== 3. KİTAP EKLEME (ADD - GET) ====================
+        [Authorize(Roles = "Admin")]
         public IActionResult Add()
         {
             ViewBag.Categories = _context.Categories.ToList();
             return View();
         }
 
-        // KİTAP EKLEME (KAYDETME) - Engeller kaldırıldı!
+        // ==================== 4. KİTAP EKLEME (ADD - POST) ====================
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public IActionResult Add(Book book)
         {
-            // ModelState kontrolünü kaldırdık, doğrudan kaydediyoruz
-            _context.Books.Add(book);
-            _context.SaveChanges();
-            return RedirectToAction("Index");
-        }
+            ModelState.Remove("Category");
 
-        // KİTAP GÜNCELLEME SAYFASI (AÇILIŞ)
-        [HttpGet]
-        public IActionResult Update(int id)
-        {
-            var book = _context.Books.Find(id);
-            if (book == null) return NotFound();
+            if (ModelState.IsValid)
+            {
+                _context.Books.Add(book);
+                _context.SaveChanges();
+                return RedirectToAction("Index");
+            }
 
             ViewBag.Categories = _context.Categories.ToList();
             return View(book);
         }
 
-        // KİTAP GÜNCELLEME (KAYDETME)
-        [HttpPost]
-        public IActionResult Update(Book book)
+        // ==================== 5. GÜNCELLEME (UPDATE - GET) ====================
+        [Authorize(Roles = "Admin")]
+        public IActionResult Update(int id)
         {
-            _context.Books.Update(book);
-            _context.SaveChanges();
-            return RedirectToAction("Index");
+            var book = _context.Books.Find(id);
+            if (book == null)
+            {
+                return NotFound();
+            }
+            ViewBag.Categories = _context.Categories.ToList();
+            return View(book);
         }
 
-        // KİTAP SİLME
+        // ==================== 6. GÜNCELLEME (UPDATE - POST) ====================
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public IActionResult Update(Book book)
+        {
+            ModelState.Remove("Category");
+
+            if (ModelState.IsValid)
+            {
+                _context.Entry(book).State = EntityState.Modified;
+                _context.SaveChanges();
+                return RedirectToAction("Index");
+            }
+            ViewBag.Categories = _context.Categories.ToList();
+            return View(book);
+        }
+
+        // ==================== 7. KİTAP SİLME (DELETE - POST) ====================
+        // HOCANIN İSTEDİĞİ GİBİ SADECE POST! 
+        // Giriş yapmayan veya yetkisiz biri buraya sızmaya çalışırsa sistem doğrudan engeller.
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
         public IActionResult Delete(int id)
         {
             var book = _context.Books.Find(id);
-            if (book != null)
+            if (book == null)
             {
-                _context.Books.Remove(book);
-                _context.SaveChanges();
+                return NotFound();
             }
+
+            _context.Books.Remove(book);
+            _context.SaveChanges();
             return RedirectToAction("Index");
         }
-        public IActionResult Details(int id) // Parantez içindeki 'int id' mutlaka olmalı!
-        {
-            var book = _context.Books
-                .Include(b => b.Category)
-                .FirstOrDefault(b => b.Id == id);
-
-            if (book == null) return NotFound();
-
-            return View(book);
-        }
     }
-    }
+}

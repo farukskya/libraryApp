@@ -1,0 +1,40 @@
+﻿@model libraryApp.Models.Book
+
+@{
+    ViewData["Title"] = "Kitap Silme Onayı";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="m-0">⚠️ Kitap Silme Onayı</h4>
+                </div>
+                <div class="card-body">
+                    <p class="fs-5">Aşağıdaki kitabı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</p>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th style="width:30%">Kitap Adı:</th>
+                            <td>@Model.Title</td>
+                        </tr>
+                        <tr>
+                            <th>Yazar:</th>
+                            <td>@Model.Author</td>
+                        </tr>
+                        <tr>
+                            <th>Kategori:</th>
+                            <td>@Model.Category?.Name</td>
+                        </tr>
+                    </table>
+
+                    <form asp-action="Delete" method="post" class="d-flex gap-2 justify-content-end mt-4">
+                        <input type="hidden" asp-for="Id" />
+                        <a asp-action="Index" class="btn btn-secondary">Vazgeç</a>
+                        <button type="submit" class="btn btn-danger px-4">Evet, Sil</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

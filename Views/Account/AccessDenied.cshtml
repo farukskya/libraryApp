@@ -1,0 +1,18 @@
+﻿@{
+    ViewData["Title"] = "Erişim Engellendi";
+}
+
+<div class="container mt-5 text-center">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="alert alert-danger py-5 shadow">
+                <h1 class="display-1 fw-bold text-danger">🛑</h1>
+                <h2 class="fw-bold mt-3">Erişim Engellendi!</h2>
+                <p class="lead mt-3">Bu sayfaya, kitap ekleme, silme veya güncelleme işlemlerine erişim yetkiniz bulunmamaktadır.</p>
+                <hr>
+                <p class="mb-0">Lütfen sistem yöneticisi (Admin) hesabı ile giriş yapınız.</p>
+                <a asp-controller="Books" asp-action="Index" class="btn btn-danger mt-4 px-4 py-2">Kitap Listesine Dön</a>
+            </div>
+        </div>
+    </div>
+</div>
